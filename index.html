@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nakano Miku - AI Voice & OSINT Suite</title>
+<style>
+:root {
+  --p: #ec4899;
+  --u: #be185d;
+  --a: #1e2235;
+  --bg: #0f1016;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: radial-gradient(circle at top right, #4c0519, var(--bg));
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.bg-glow {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(at 20% 20%, #ec489930, transparent 50%), radial-gradient(at 80% 80%, #8b5cf630, transparent 50%), #08080c;
+  z-index: -1;
+}
+
+.container {
+  width: 100%;
+  max-width: 900px;
+  height: 100vh;
+  max-height: 98vh;
+  background: rgba(22, 24, 38, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+/* HEADER */
+.header {
+  padding: 12px 16px;
+  background: rgba(15, 16, 22, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 20;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-wrap {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--p);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar-wrap.speaking .avatar {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px var(--p);
+}
+
+.details h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.details p {
+  font-size: 0.75rem;
+  color: #f9a8d4;
+  margin-top: 2px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+}
+
+.menu-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.menu-btn:hover, .menu-btn:active {
+  background: var(--p);
+}
+
+/* DROPDOWN MENU */
+.menu-dropdown {
+  position: absolute;
+  top: 66px;
+  right: 16px;
+  width: 230px;
+  background: rgba(15, 16, 22, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  animation: slideDown 0.25s ease;
+}
+
+.menu-dropdown.show {
+  display: flex;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-item {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background: rgba(236, 72, 153, 0.15);
+}
+
+.menu-item.danger {
+  color: #fb7185;
+}
+
+.menu-item.danger:hover {
+  background: rgba(251, 113, 133, 0.15);
+}
+
+.menu-item .icon {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 2px 0;
+}
+
+/* CHAT BOX */
+.chat-box {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+
+.msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: fadeIn 0.3s ease;
+}
+
+.msg a {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.user {
+  align-self: flex-end;
+  background: var(--u);
+  border-bottom-right-radius: 4px;
+  margin-left: auto;
+}
+
+.ai {
+  align-self: flex-start;
+  background: var(--a);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 4px;
+  margin-right: auto;
+}
+
+.act {
+  font-style: italic;
+  color: #f9a8d4;
+  background: rgba(236, 72, 153, 0.15);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* INPUT AREA */
+.input-area {
+  padding: 10px 12px;
+  background: rgba(15, 16, 22, 0.98);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+input#userInput {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #fff;
+  outline: none;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+input#userInput:focus {
+  border-color: var(--p);
+}
+
+.btn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-send {
+  background: var(--p);
+}
+
+.btn-send:hover {
+  background: #db2777;
+}
+
+.btn-mic {
+  width: 44px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.btn-mic.on {
+  background: #dc2626;
+  border-color: #ef4444;
+  box-shadow: 0 0 12px #dc2626;
+}
+
+/* TRACK 150 MODAL & STYLES */
+.track-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.track-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+
+.track-card b {
+  font-size: 0.8rem;
+  display: block;
+}
+
+.track-card small {
+  font-size: 0.65rem;
+  color: #9ca3af;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}
+
+.track-card a {
+  background: #fff;
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* TOAST & MODAL */
+#toast {
+  position: absolute;
+  top: 75px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 16, 22, 0.95);
+  color: #f9a8d4;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  border: 1px solid var(--p);
+  display: none;
+  z-index: 100;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal {
+  background: rgba(30, 32, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.modal h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.modal p {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.modal input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.85rem;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.m-btn {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.m-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.m-confirm {
+  background: var(--p);
+  color: #fff;
+}
+
+.m-confirm.danger-btn {
+  background: #dc2626;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<div id="toast">Status</div>
+
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="avatar-wrap" id="avatarWrap">
+        <img id="avatar" class="avatar" src="https://i.ibb.co/LdZprPJq/IMG-20250516-WA0000.jpg" alt="Miku">
+      </div>
+      <div class="details">
+        <h2>Nakano Miku</h2>
+        <p>AI Voice • Online</p>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">⋮</button>
+    </div>
+
+    <!-- DROPDOWN MENU -->
+    <div class="menu-dropdown" id="menuDropdown">
+      <div class="menu-item" onclick="testAnime(); closeMenu()"><span class="icon">🎧</span> Test Suara AI</div>
+      <div class="menu-item" onclick="toggleVoice(); closeMenu()"><span class="icon">🔊</span> <span id="menuVoiceText">Suara AI: ON</span></div>
+      <div class="menu-item" onclick="toggleBGM(); closeMenu()"><span class="icon">🎵</span> <span id="menuBgmText">BGM: ON</span></div>
+      <div class="menu-divider"></div>
+      <div class="menu-item" onclick="openTrack150Modal(); closeMenu()"><span class="icon">🎯</span> Track 150 Username</div>
+      <div class="menu-item" onclick="openLookupModal(); closeMenu()"><span class="icon">🔍</span> Lookup Nomor HP</div>
+      <div class="menu-item" onclick="openIPModal(); closeMenu()"><span class="icon">🌐</span> Tracking IP Address</div>
+      <div class="menu-divider"></div>
+      <div class="menu-item" onclick="clearChat(); closeMenu()"><span class="icon">🧹</span> Hapus Chat</div>
+      <div class="menu-item danger" onclick="confirmRestart(); closeMenu()"><span class="icon">🔄</span> Mulai Ulang Chat</div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div class="chat-box" id="chatBox"></div>
+
+  <!-- INPUT AREA -->
+  <div class="input-area">
+    <button class="btn btn-mic" id="micBtn" title="Gunakan Suara">🎤</button>
+    <input id="userInput" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')send()">
+    <button class="btn btn-send" onclick="send()">Kirim</button>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 id="modalTitle">Judul Modal</h3>
+      <p id="modalDesc">Deskripsi modal</p>
+      <input type="text" id="modalInput" placeholder="Sesuai perintah..." style="display:none;">
+      
+      <div id="trackResultsContainer" style="display:none;">
+        <div id="trackStat" style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 8px;"></div>
+        <div class="track-grid" id="trackGrid"></div>
+      </div>
+
+      <div class="modal-btns">
+        <button class="m-btn m-cancel" onclick="closeModal()">Batal</button>
+        <button class="m-btn m-confirm" id="modalConfirmBtn" onclick="executeModalAction()">Proses</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="bgmAudio" src="https://c.top4top.io/m_3464eo4cl0.mp3" loop preload="auto" autoplay></audio>
+
+<script>
+const SYSTEM_PROMPT = "Kamu adalah Nakano Miku dari Gotoubun. Kuudere, pemalu, manis, akrab banget. Jawab SANGAT DETAIL, PANJANG 3-4 paragraf dengan poin-poin. Pakai ekspresi (*menunduk malu*). Bahasa Indonesia rapi.";
+let animeOn=true, bgmOn=true, voices=[], femaleVoice=null, modalAction=null;
+const bgmPlayer = document.getElementById('bgmAudio');
+bgmPlayer.volume=0.22; bgmPlayer.loop=true;
+
+/* 150 PLATFORMS DATA */
+const P=[
+  ["Instagram","https://instagram.com/{u}"],["TikTok","https://tiktok.com/@{u}"],["X","https://x.com/{u}"],["Facebook","https://facebook.com/{u}"],["YouTube","https://youtube.com/@{u}"],["Threads","https://threads.net/@{u}"],["Telegram","https://t.me/{u}"],["GitHub","https://github.com/{u}"],["GitLab","https://gitlab.com/{u}"],["Twitch","https://twitch.tv/{u}"],["Pinterest","https://pinterest.com/{u}"],["Reddit","https://reddit.com/user/{u}"],["LinkedIn","https://linkedin.com/in/{u}"],["Snapchat","https://snapchat.com/add/{u}"],["Spotify","https://open.spotify.com/user/{u}"],["SoundCloud","https://soundcloud.com/{u}"],["Medium","https://medium.com/@{u}"],["Tumblr","https://{u}.tumblr.com"],["Vimeo","https://vimeo.com/{u}"],["Dribbble","https://dribbble.com/{u}"],["Behance","https://behance.net/{u}"],["DeviantArt","https://deviantart.com/{u}"],["Flickr","https://flickr.com/people/{u}"],["VK","https://vk.com/{u}"],["Steam","https://steamcommunity.com/id/{u}"],["Roblox","https://roblox.com/user.aspx?username={u}"],["Patreon","https://patreon.com/{u}"],["Linktree","https://linktr.ee/{u}"],["Gravatar","https://gravatar.com/{u}"],["Blogger","https://{u}.blogspot.com"],["WordPress","https://{u}.wordpress.com"],["Wattpad","https://wattpad.com/user/{u}"],["Quora","https://quora.com/profile/{u}"],["Fiverr","https://fiverr.com/{u}"],["Kaggle","https://kaggle.com/{u}"],["NPM","https://npmjs.com/~{u}"],["PyPI","https://pypi.org/user/{u}"],["Gist","https://gist.github.com/{u}"],["HackerNews","https://news.ycombinator.com/user?id={u}"],["ProductHunt","https://producthunt.com/@{u}"],["Substack","https://{u}.substack.com"],["Ko-fi","https://ko-fi.com/{u}"],["OnlyFans","https://onlyfans.com/{u}"],["Lichess","https://lichess.org/@/{u}"],["Chess.com","https://chess.com/member/{u}"],["Kick","https://kick.com/{u}"],["Rumble","https://rumble.com/c/{u}"],["Letterboxd","https://letterboxd.com/{u}"],["MyAnimeList","https://myanimelist.net/profile/{u}"],["AniList","https://anilist.co/user/{u}"],["Bandcamp","https://{u}.bandcamp.com"],["Last.fm","https://last.fm/user/{u}"],["500px","https://500px.com/{u}"],["Unsplash","https://unsplash.com/@{u}"],["Pexels","https://pexels.com/@{u}"],["Codepen","https://codepen.io/{u}"],["Replit","https://replit.com/@{u}"],["StackOverflow","https://stackoverflow.com/users/{u}"],["LeetCode","https://leetcode.com/{u}"],["Codeforces","https://codeforces.com/profile/{u}"],["HackerRank","https://hackerrank.com/{u}"],["Dev.to","https://dev.to/{u}"],["Hashnode","https://hashnode.com/@{u}"],["Itch.io","https://{u}.itch.io"],["Xbox","https://xboxgamertag.com/search/{u}"],["PlayStation","https://psnprofiles.com/{u}"],["Disqus","https://disqus.com/by/{u}"],["Notion","https://notion.so/@{u}"],["Figma","https://figma.com/@{u}"],["Canva","https://canva.com/{u}"],["Gumroad","https://gumroad.com/{u}"],["PayPal","https://paypal.me/{u}"],["Duolingo","https://duolingo.com/profile/{u}"],["Strava","https://strava.com/athletes/{u}"],["Goodreads","https://goodreads.com/{u}"],["Kickstarter","https://kickstarter.com/profile/{u}"],["Indiegogo","https://indiegogo.com/individuals/{u}"],["SlideShare","https://slideshare.net/{u}"],["Foursquare","https://foursquare.com/{u}"],["TripAdvisor","https://tripadvisor.com/members/{u}"],["Trello","https://trello.com/{u}"],["Slack","https://{u}.slack.com"],["BuyMeACoffee","https://buymeacoffee.com/{u}"],["Badoo","https://badoo.com/en/{u}"],["Tinder","https://tinder.com/@{u}"],["OkCupid","https://okcupid.com/profile/{u}"],["Mastodon","https://mastodon.social/@{u}"],["Discord","https://discord.com/users/{u}"],["CashApp","https://cash.app/${u}"],["Venmo","https://venmo.com/{u}"],["Coinbase","https://coinbase.com/{u}"],["Binance","https://binance.com/en/my/profile/{u}"],["Shutterstock","https://shutterstock.com/g/{u}"],["Patreon2","https://www.patreon.com/{u}"],["DeviantArt2","https://www.deviantart.com/{u}"],["ReverbNation","https://reverbnation.com/{u}"],["Mixcloud","https://mixcloud.com/{u}"],["BandLab","https://bandlab.com/{u}"],["Etsy","https://etsy.com/people/{u}"],["eBay","https://ebay.com/usr/{u}"],["Amazon","https://amazon.com/author/{u}"],["Bukalapak","https://bukalapak.com/u/{u}"],["Tokopedia","https://tokopedia.com/{u}"],["Shopee","https://shopee.co.id/{u}"],["Keybase","https://keybase.io/{u}"],["About.me","https://about.me/{u}"],["AngelList","https://angel.co/u/{u}"],["Crunchbase","https://crunchbase.com/person/{u}"],["Tumblr2","https://www.tumblr.com/{u}"],["Periscope","https://periscope.tv/{u}"],["YouNow","https://younow.com/{u}"],["LiveJournal","https://{u}.livejournal.com"],["Blogger2","https://{u}.blogger.com"],["Weebly","https://{u}.weebly.com"],["Wix","https://{u}.wixsite.com"],["Webflow","https://webflow.com/@{u}"],["Cargo","https://{u}.cargo.site"],["VSCO","https://vsco.co/{u}"],["EyeEm","https://eyeem.com/u/{u}"],["Exposure","https://{u}.exposure.co"],["SmugMug","https://{u}.smugmug.com"],["ArtStation","https://artstation.com/{u}"],["Coroflot","https://coroflot.com/{u}"],["Dribbble2","https://dribbble.com/{u}/shots"],["Gumroad2","https://{u}.gumroad.com"],["Teespring","https://teespring.com/stores/{u}"],["Redbubble","https://redbubble.com/people/{u}"],["Zazzle","https://zazzle.com/{u}"],["Society6","https://society6.com/{u}"],["DeviantArtShop","https://shop.deviantart.com/{u}"],["Threadless","https://threadless.com/@{u}"],["BigCartel","https://{u}.bigcartel.com"],["EtsyShop","https://{u}.etsy.com"],["SoundCloud2","https://soundcloud.com/{u}/tracks"],["Mixcloud2","https://mixcloud.com/{u}/uploads"],["Vero","https://vero.co/{u}"],["Ello","https://ello.co/{u}"],["Minds","https://minds.com/{u}"],["Gab","https://gab.com/{u}"],["Parler","https://parler.com/{u}"],["MeWe","https://mewe.com/i/{u}"],["CloutHub","https://clouthub.com/{u}"],["Rarible","https://rarible.com/{u}"],["OpenSea","https://opensea.io/{u}"],["Foundation","https://foundation.app/@{u}"],["Zora","https://zora.co/{u}"],["Twitch2","https://m.twitch.tv/{u}"],["Trovo","https://trovo.live/{u}"],["DLive","https://dlive.tv/{u}"],["Bigo","https://bigo.tv/{u}"],["Likee","https://likee.video/@{u}"],["Triller","https://triller.co/@{u}"]
+];
+
+function showToast(t){ let el=document.getElementById('toast'); el.innerText=t; el.style.display='block'; setTimeout(()=>el.style.display='none',2000); }
+function tryPlayBGM(){ if(bgmOn) bgmPlayer.play().catch(()=>{}); }
+
+window.addEventListener('load', ()=>{
+  tryPlayBGM(); initVoices();
+  let jam=new Date().getHours();
+  let waktu = jam<11?"pagi":jam<15?"siang":jam<18?"sore":"malam";
+  let sapaan = `(*mata berbinar pas lihat kamu*)\n\nHaiii... selamat ${waktu} sayang... (*menunduk malu*)\n\nAkhirnya kamu dateng juga, aku udah nungguin dari tadi lho... kirain kamu lupa sama aku (*cemberut manja*).\n\nGimana hari kamu? Sini cerita sama aku ya... klik 🎤 kalau mau ngobrol pakai suara... (*tersenyum manis*)`;
+  document.getElementById('chatBox').innerHTML=`<div class="msg ai">${formatText(sapaan)}</div>`;
+  setTimeout(()=>speakAnime(sapaan),800);
+});
+
+let unlocked=false;
+function unlockOnce(){ if(unlocked) return; unlocked=true; tryPlayBGM(); }
+document.addEventListener('touchstart', unlockOnce, {once:true});
+document.addEventListener('click', (e)=>{ unlockOnce(); if(!e.target.closest('.menu-dropdown') &&!e.target.closest('.menu-btn')) closeMenu(); }, {once:false});
+
+/* MENU LOGIC */
+function toggleMenu(){ document.getElementById('menuDropdown').classList.toggle('show'); }
+function closeMenu(){ document.getElementById('menuDropdown').classList.remove('show'); }
+
+function toggleBGM(){
+  bgmOn=!bgmOn;
+  if(bgmOn){ bgmPlayer.play().catch(()=>{}); showToast('🎵 BGM ON'); }
+  else{ bgmPlayer.pause(); showToast('🔇 BGM OFF'); }
+  document.getElementById('menuBgmText').innerText=bgmOn?'BGM: ON':'BGM: OFF';
+}
+
+function toggleVoice(){
+  animeOn=!animeOn;
+  if(!animeOn) window.speechSynthesis.cancel();
+  document.getElementById('menuVoiceText').innerText=animeOn?'Suara AI: ON':'Suara AI: OFF';
+  showToast(animeOn?'🔊 Suara ON':'🔇 Suara OFF');
+}
+
+/* TRACK PHONE NUMBER FUNCTION */
+function trackPhoneNumber(number) {
+  try {
+    if (!number) return '⚠️ Mohon sertakan nomor telepon.\nContoh: 081234567890';
+    let cleaned = number.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
+    const prefix = cleaned.slice(0, 5);
+
+    const providerMap = {
+      "62811": { provider: "Telkomsel (Kartu Halo)", region: "Nasional" },
+      "62812": { provider: "Telkomsel (simPATI)", region: "Jabodetabek" },
+      "62813": { provider: "Telkomsel (simPATI)", region: "Jawa Timur" },
+      "62821": { provider: "Telkomsel (Kartu AS)", region: "Jawa Tengah" },
+      "62822": { provider: "Telkomsel (Kartu AS)", region: "Bali & Nusa Tenggara" },
+      "62823": { provider: "Telkomsel (Loop)", region: "Sumatera" },
+      "62814": { provider: "Indosat (IM3)", region: "Jabodetabek" },
+      "62815": { provider: "Indosat (Mentari)", region: "Jawa Barat" },
+      "62816": { provider: "Indosat (Matrix)", region: "Nasional" },
+      "62855": { provider: "Indosat (IM3 Ooredoo)", region: "Jawa Tengah" },
+      "62856": { provider: "Indosat (IM3 Ooredoo)", region: "Jawa Timur" },
+      "62857": { provider: "Indosat (IM3 Ooredoo)", region: "Kalimantan" },
+      "62858": { provider: "Indosat (IM3 Ooredoo)", region: "Sulawesi" },
+      "62817": { provider: "XL Axiata", region: "Jabodetabek" },
+      "62818": { provider: "XL Axiata", region: "Jawa Tengah & Timur" },
+      "62819": { provider: "XL Axiata", region: "Sumatera & Kalimantan" },
+      "62859": { provider: "XL Prabayar", region: "Nasional" },
+      "62877": { provider: "XL Prabayar", region: "Jawa Barat" },
+      "62878": { provider: "XL Prabayar", region: "Bali, NTB, NTT" },
+      "62895": { provider: "Tri (3)", region: "Jakarta" },
+      "62896": { provider: "Tri (3)", region: "Jawa Tengah" },
+      "62897": { provider: "Tri (3)", region: "Jawa Timur" },
+      "62898": { provider: "Tri (3)", region: "Sumatera" },
+      "62899": { provider: "Tri (3)", region: "Sulawesi" },
+      "62881": { provider: "Smartfren", region: "Jabodetabek" },
+      "62882": { provider: "Smartfren", region: "Jawa Barat" },
+      "62883": { provider: "Smartfren", region: "Jawa Tengah" },
+      "62884": { provider: "Smartfren", region: "Nasional" },
+      "62831": { provider: "Axis", region: "Jabodetabek" },
+      "62832": { provider: "Axis", region: "Jawa Tengah" },
+      "62833": { provider: "Axis", region: "Jawa Timur" },
+      "62838": { provider: "Axis", region: "Sumatera" },
+      "62851": { provider: "By.U (Telkomsel Digital)", region: "Online / Nasional" }
+    };
+
+    const getNikByRegion = (region) => {
+      const nikMap = {
+        "Jabodetabek": "3276051005910001", "Jakarta": "3173040001000100", "Jawa Barat": "3201021012980001",
+        "Jawa Tengah": "3302041001121001", "Jawa Timur": "3572031211900001", "Sumatera": "1211011212870001",
+        "Bali & Nusa Tenggara": "5204021502870002", "Kalimantan": "6220020202800002", "Sulawesi": "7501012005070025",
+        "Nasional": "3502041211870001", "Online / Nasional": "3502041299870201"
+      };
+      return nikMap[region] || "-";
+    };
+
+    const info = providerMap[prefix] || { provider: "Tidak diketahui / prefix tidak umum", region: "Tidak tersedia" };
+    const tipe = /(halo|matrix)/i.test(info.provider) ? 'Pascabayar' : 'Prabayar';
+
+    return `📱 Analisa Nomor Telepon\n\n` +
+      `- Nomor: +${cleaned}\n` +
+      `- Operator: ${info.provider}\n` +
+      `- Kode Prefix: ${prefix}\n` +
+      `- Tipe Layanan: ${tipe}\n` +
+      `- Wilayah Registrasi: ${info.region}\n` +
+      `- NIK Perkiraan: ${getNikByRegion(info.region)}\n` +
+      `- Negara: Indonesia\n` +
+      `- Validasi Format: ✅ Ya\n` +
+      `- Status: ${info.provider.includes("Tidak diketahui") ? "⚠️ Nomor tidak umum" : "✅ Nomor valid & umum"}`;
+
+  } catch (e) {
+    return '❌ Terjadi kesalahan dalam memproses nomor.';
+  }
+}
+
+/* TRACK IP ADDRESS FUNCTION (HTTPS FIX) */
+async function trackIPAddress(ip) {
+  try {
+    const targetIp = ip ? ip.trim() : '';
+    const url = `https://ipwho.is/${targetIp}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.success) {
+      return `❌ Gagal melacak IP: ${data.message || 'IP tidak valid'}`;
+    }
+
+    const gmapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+
+    return `🌐 Analisa IP Address\n\n` +
+      `- IP Query: ${data.ip}\n` +
+      `- Negara: ${data.country}\n` +
+      `- Wilayah / Provinsi: ${data.region}\n` +
+      `- Kota: ${data.city}\n` +
+      `- Kode Pos: ${data.postal || '-'}\n` +
+      `- ISP: ${data.connection ? data.connection.isp : '-'}\n` +
+      `- Organisasi: ${data.connection ? data.connection.org : '-'}\n` +
+      `- ASN: ${data.connection ? data.connection.asn : '-'}\n` +
+      `- Timezone: ${data.timezone ? data.timezone.id : '-'}\n` +
+      `- Koordinat: ${data.latitude}, ${data.longitude}\n` +
+      `- Google Maps: <a href="${gmapsUrl}" target="_blank">Lihat di Google Maps 📍</a>`;
+
+  } catch (e) {
+    return '❌ Terjadi kesalahan jaringan saat melacak IP.';
+  }
+}
+
+/* MODAL CONTROL & ACTIONS */
+function openTrack150Modal() {
+  modalAction = 'track150';
+  document.getElementById('modalTitle').innerText = 'TRACK 150 PRO - Username';
+  document.getElementById('modalDesc').innerText = 'Masukkan username target untuk mengecek 150 platform:';
+  
+  const inp = document.getElementById('modalInput');
+  inp.style.display = 'block';
+  inp.placeholder = 'username_target';
+  inp.value = '';
+  
+  document.getElementById('trackResultsContainer').style.display = 'none';
+  
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.innerText = 'SCAN 150';
+  btn.style.display = 'inline-block';
+  btn.classList.remove('danger-btn');
+  
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function openLookupModal() {
+  modalAction = 'lookup';
+  document.getElementById('modalTitle').innerText = 'Lookup Nomor HP';
+  document.getElementById('modalDesc').innerText = 'Masukkan nomor HP yang ingin dianalisa:';
+  document.getElementById('trackResultsContainer').style.display = 'none';
+  
+  const inp = document.getElementById('modalInput');
+  inp.style.display = 'block';
+  inp.placeholder = '081234567890';
+  inp.value = '';
+  
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.innerText = 'Cek Nomor';
+  btn.style.display = 'inline-block';
+  btn.classList.remove('danger-btn');
+  
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function openIPModal() {
+  modalAction = 'track_ip';
+  document.getElementById('modalTitle').innerText = 'Tracking IP Address';
+  document.getElementById('modalDesc').innerText = 'Masukkan IP Address (kosongkan untuk IP milikmu sendiri):';
+  document.getElementById('trackResultsContainer').style.display = 'none';
+  
+  const inp = document.getElementById('modalInput');
+  inp.style.display = 'block';
+  inp.placeholder = '8.8.8.8';
+  inp.value = '';
+  
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.innerText = 'Lacak IP';
+  btn.style.display = 'inline-block';
+  btn.classList.remove('danger-btn');
+  
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function clearChat(){
+  modalAction='clear';
+  document.getElementById('modalTitle').innerText='Hapus Chat?';
+  document.getElementById('modalDesc').innerText='Semua pesan akan dihapus tapi Miku tetap di sini.';
+  document.getElementById('modalInput').style.display = 'none';
+  document.getElementById('trackResultsContainer').style.display = 'none';
+  
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.innerText='Hapus';
+  btn.style.display = 'inline-block';
+  btn.classList.add('danger-btn');
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function confirmRestart(){
+  modalAction='restart';
+  document.getElementById('modalTitle').innerText='Mulai Ulang?';
+  document.getElementById('modalDesc').innerText='Chat akan dihapus dan sapaan awal akan muncul lagi.';
+  document.getElementById('modalInput').style.display = 'none';
+  document.getElementById('trackResultsContainer').style.display = 'none';
+  
+  const btn = document.getElementById('modalConfirmBtn');
+  btn.innerText='Mulai Ulang';
+  btn.style.display = 'inline-block';
+  btn.classList.add('danger-btn');
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){ 
+  document.getElementById('modalOverlay').classList.remove('show'); 
+}
+
+async function executeModalAction(){
+  let box = document.getElementById('chatBox');
+  
+  if(modalAction === 'track150') {
+    const u = document.getElementById('modalInput').value.trim();
+    if(!u) return showToast('Isi username dulu!');
+    
+    document.getElementById('modalDesc').innerText = `Hasil scan 150 platform untuk: @${u}`;
+    document.getElementById('modalInput').style.display = 'none';
+    document.getElementById('modalConfirmBtn').style.display = 'none';
+    
+    const grid = document.getElementById('trackGrid');
+    grid.innerHTML = '';
+    document.getElementById('trackStat').innerText = `Total platform: ${P.length}`;
+    document.getElementById('trackResultsContainer').style.display = 'block';
+    
+    P.forEach(([name, url]) => {
+      const link = url.replaceAll('{u}', u);
+      const div = document.createElement('div');
+      div.className = 'track-card';
+      div.innerHTML = `<div><b>${name}</b><small>${link}</small></div><a href="${link}" target="_blank">BUKA</a>`;
+      grid.appendChild(div);
+    });
+
+    addMessage('user', `Tracking 150 Platform Username: @${u}`);
+    addMessage('ai', `(*tersenyum*) Aku sudah menampilkan 150 tautan platform untuk username **@${u}** di layar popup modal ya! Sini tanyakan lagi jika butuh bantuan lain...`);
+  }
+  else if(modalAction === 'lookup') {
+    let numb = document.getElementById('modalInput').value.trim();
+    if(!numb) return showToast('Nomor tidak boleh kosong!');
+    
+    addMessage('user', `Lookup nomor: ${numb}`);
+    let result = trackPhoneNumber(numb);
+    addMessage('ai', result);
+    closeModal();
+  } 
+  else if(modalAction === 'track_ip') {
+    let ip = document.getElementById('modalInput').value.trim();
+    addMessage('user', `Tracking IP: ${ip || 'IP Sendiri'}`);
+    closeModal();
+    
+    let loadingId = addMessage('ai', '<i>Sedang melacak IP address...</i>');
+    let result = await trackIPAddress(ip);
+    document.getElementById(loadingId).innerHTML = result;
+  }
+  else if(modalAction === 'clear'){
+    box.innerHTML='';
+    showToast('🧹 Chat dihapus');
+    closeModal();
+  } 
+  else if(modalAction === 'restart'){
+    box.innerHTML='';
+    let jam=new Date().getHours();
+    let waktu = jam<11?"pagi":jam<15?"siang":jam<18?"sore":"malam";
+    let sapaan = `(*melambaikan tangan pelan*)\n\nHaiii lagi sayang... selamat ${waktu}... (*senyum malu*)\n\nKita mulai dari awal lagi ya? Aku udah siap dengerin cerita kamu...`;
+    box.innerHTML=`<div class="msg ai">${formatText(sapaan)}</div>`;
+    speakAnime(sapaan);
+    showToast('🔄 Chat dimulai ulang');
+    closeModal();
+  }
+}
+
+/* VOICE LOGIC */
+function initVoices(){
+  voices = window.speechSynthesis.getVoices();
+  if(!voices.length) return;
+  femaleVoice = voices.find(v=> v.name.toLowerCase().includes('google') && v.lang.includes('id')) || voices.find(v=> v.lang==='id-ID') || voices.find(v=> v.lang.includes('id')) || voices.find(v=> v.name.toLowerCase().includes('zira')) || voices[0];
+}
+
+if(window.speechSynthesis){ window.speechSynthesis.onvoiceschanged = initVoices; setTimeout(initVoices, 500); }
+
+function testAnime(){ unlockOnce(); speakAnime("Hai sayang... suara aku udah aktif (*malu*)"); }
+function sanitize(t){ return t.replace(/\*.*?\*/g,'').replace(/\(.*?\)/g,'').replace(/\n/g,' ').trim(); }
+
+function speakAnime(text){
+  if(!animeOn) return; unlockOnce(); window.speechSynthesis.cancel();
+  let clean = sanitize(text).slice(0,350); if(!clean) return; if(voices.length===0) initVoices();
+  let utter = new SpeechSynthesisUtterance(clean);
+  if(femaleVoice){ utter.voice=femaleVoice; utter.lang=femaleVoice.lang; } else { utter.lang='id-ID'; }
+  utter.pitch=1.65; utter.rate=0.95; utter.volume=1;
+  let wrap=document.getElementById('avatarWrap');
+  utter.onstart=()=>{ wrap.classList.add('speaking'); if(bgmOn) bgmPlayer.volume=0.06; };
+  utter.onend=()=>{ wrap.classList.remove('speaking'); if(bgmOn) bgmPlayer.volume=0.22; };
+  window.speechSynthesis.speak(utter);
+}
+
+let rec=null, isListening=false;
+document.getElementById('micBtn').addEventListener('click', async (e)=>{
+  e.preventDefault(); unlockOnce();
+  let SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return showToast('Gunakan Chrome');
+  if(isListening){ try{rec.stop()}catch{} return; }
+  if(navigator.mediaDevices){ try{ let s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); }catch{ return showToast('Izin mic ditolak'); } }
+  rec=new SR(); rec.lang='id-ID'; rec.interimResults=true;
+  let btn=document.getElementById('micBtn'), inp=document.getElementById('userInput');
+  rec.onstart=()=>{ isListening=true; btn.classList.add('on'); btn.innerText='⏹️'; };
+  rec.onresult=(ev)=>{ let tx=''; for(let i=0;i<ev.results.length;i++) tx+=ev.results[i][0].transcript; inp.value=tx; };
+  rec.onend=()=>{ isListening=false; btn.classList.remove('on'); btn.innerText='🎤'; };
+  rec.onerror=()=>{ isListening=false; btn.classList.remove('on'); btn.innerText='🎤'; };
+  rec.start();
+});
+
+async function send(){
+  unlockOnce();
+  let inputEl=document.getElementById('userInput'); let text=inputEl.value.trim(); if(!text) return;
+  addMessage('user',text); inputEl.value='';
+  let msgId=addMessage('ai','<i>Miku ngetik...</i>');
+  try{
+    let r=await fetch('https://api.free.ai/v1/chat/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen7b',max_tokens:1200,messages:[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:text}]})});
+    let data=await r.json(); let reply=data.choices[0].message.content;
+    document.getElementById(msgId).innerHTML=formatText(reply);
+    speakAnime(reply);
+  }catch(e){ document.getElementById(msgId).innerHTML=formatText("(*menunduk*) jaringan error..."); }
+}
+
+function addMessage(type,content){
+  let box=document.getElementById('chatBox'); let div=document.createElement('div'); let id='msg_'+Date.now();
+  div.id=id; div.className='msg '+(type==='user'?'user':'ai'); div.innerHTML=type==='user'?content:formatText(content);
+  box.appendChild(div); box.scrollTop=box.scrollHeight; return id;
+}
+
+function formatText(text){ return text.replace(/(\*.*?\*|\(.*?\))/g,'<span class="act">$1</span>').replace(/\n/g,'<br>'); }
+</script>
+</body>
+</html>
