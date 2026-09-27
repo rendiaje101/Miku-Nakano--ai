@@ -23,11 +23,11 @@
 body {
   background: radial-gradient(circle at top right, #4c0519, var(--bg));
   color: #fff;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 8px;
+  padding: 0;
   overflow: hidden;
 }
 
@@ -41,16 +41,21 @@ body {
 .container {
   width: 100%;
   max-width: 900px;
-  height: 100vh;
-  max-height: 98vh;
+  height: 100dvh; /* Menggunakan dvh agar pas dengan viewport HP */
   background: rgba(22, 24, 38, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .container {
+    height: 96vh;
+    border-radius: 20px;
+  }
 }
 
 /* HEADER */
@@ -63,6 +68,7 @@ body {
   justify-content: space-between;
   position: relative;
   z-index: 20;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -72,8 +78,8 @@ body {
 }
 
 .avatar-wrap {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -95,13 +101,13 @@ body {
 }
 
 .details h2 {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .details p {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #f9a8d4;
   margin-top: 2px;
 }
@@ -199,6 +205,7 @@ body {
 /* CHAT BOX */
 .chat-box {
   flex: 1;
+  min-height: 0; /* MENCEGAH MENDORONG INPUT KELUAR LAYAR */
   padding: 16px;
   overflow-y: auto;
   display: flex;
@@ -251,7 +258,7 @@ body {
   border-radius: 6px;
 }
 
-/* INPUT AREA */
+/* INPUT AREA - FIXED BOTTOM */
 .input-area {
   padding: 10px 12px;
   background: rgba(15, 16, 22, 0.98);
@@ -260,6 +267,8 @@ body {
   gap: 8px;
   align-items: center;
   width: 100%;
+  flex-shrink: 0; /* Memastikan input bar tidak mengecil/terpotong */
+  z-index: 10;
 }
 
 input#userInput {
@@ -329,7 +338,7 @@ input#userInput:focus {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
   margin-top: 12px;
-  max-height: 350px;
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -655,7 +664,7 @@ function trackPhoneNumber(number) {
   }
 }
 
-/* TRACK IP ADDRESS FUNCTION (HTTPS FIX) */
+/* TRACK IP ADDRESS FUNCTION */
 async function trackIPAddress(ip) {
   try {
     const targetIp = ip ? ip.trim() : '';
