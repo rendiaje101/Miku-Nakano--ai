@@ -474,6 +474,7 @@ input#userInput:focus {
 .m-confirm.danger-btn {
   background: #dc2626;
 }
+
 </style>
 </head>
 <body>
@@ -508,6 +509,7 @@ input#userInput:focus {
       <div class="menu-item" onclick="openLookupModal(); closeMenu()"><span class="icon">🔍</span> Lookup Nomor HP</div>
       <div class="menu-item" onclick="openIPModal(); closeMenu()"><span class="icon">🌐</span> Tracking IP Address</div>
       <div class="menu-divider"></div>
+      <div class="menu-item" onclick="showCredits(); closeMenu()"><span class="icon">👑</span> Credits</div>
       <div class="menu-item" onclick="clearChat(); closeMenu()"><span class="icon">🧹</span> Hapus Chat</div>
       <div class="menu-item danger" onclick="confirmRestart(); closeMenu()"><span class="icon">🔄</span> Mulai Ulang Chat</div>
     </div>
@@ -515,7 +517,6 @@ input#userInput:focus {
 
   <!-- CHAT AREA -->
   <div class="chat-box" id="chatBox"></div>
-
   <!-- INPUT AREA -->
   <div class="input-area">
     <button class="btn btn-mic" id="micBtn" title="Gunakan Suara">🎤</button>
@@ -847,6 +848,11 @@ async function executeModalAction(){
     showToast('🔄 Chat dimulai ulang');
     closeModal();
   }
+}
+
+/* CREDITS */
+function showCredits(){
+  showToast('✦ RendiSec • VynCyberTeam ✦');
 }
 
 /* VOICE LOGIC */
